@@ -457,7 +457,7 @@ export function AddConfigModal({
                   spellCheck={false}
                   value={userAgent}
                   onChange={(e) => setUserAgent(e.target.value)}
-                  placeholder="satelite-proxy/0.1 clash-verge/v2.5 flclash/1"
+                  placeholder="DrVPN/0.1 clash-verge/v2.5 flclash/1"
                   disabled={busy}
                 />
               </label>

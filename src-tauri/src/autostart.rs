@@ -13,7 +13,7 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[cfg(target_os = "macos")]
-const LAUNCH_AGENT_LABEL: &str = "com.satelite.proxy";
+const LAUNCH_AGENT_LABEL: &str = "net.drvpn.desktop";
 
 fn current_exe() -> AppResult<PathBuf> {
     std::env::current_exe().map_err(|e| AppError::Core(format!("current_exe: {e}")))
@@ -90,11 +90,11 @@ pub fn set_launch_at_login(enabled: bool) -> AppResult<()> {
         let home = std::env::var_os("HOME").ok_or_else(|| AppError::Core("HOME unset".into()))?;
         let desktop = PathBuf::from(home)
             .join(".config/autostart")
-            .join("satelite-proxy.desktop");
+            .join("drvpn-desktop.desktop");
         if enabled {
             let exe = current_exe()?;
             let body = format!(
-                "[Desktop Entry]\nType=Application\nName=Satelite\nExec=\"{}\"\nX-GNOME-Autostart-enabled=true\n",
+                "[Desktop Entry]\nType=Application\nName=DrVPN\nExec=\"{}\"\nX-GNOME-Autostart-enabled=true\n",
                 exe.display()
             );
             if let Some(parent) = desktop.parent() {
@@ -117,7 +117,7 @@ pub fn set_launch_at_login(enabled: bool) -> AppResult<()> {
                 "add",
                 r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
                 "/v",
-                "SateliteProxy",
+                "DrVPN",
                 "/t",
                 "REG_SZ",
                 "/d",
@@ -139,7 +139,7 @@ pub fn set_launch_at_login(enabled: bool) -> AppResult<()> {
                 "delete",
                 r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
                 "/v",
-                "SateliteProxy",
+                "DrVPN",
                 "/f",
             ]);
             #[cfg(target_os = "windows")]

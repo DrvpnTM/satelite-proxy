@@ -1,12 +1,12 @@
 [package]
-name = "satelite-proxy"
-version = "1.0.4"
-description = "Satelite — lightweight sing-box desktop client"
+name = "drvpn-desktop"
+version = "1.0.47"
+description = "DrVPN — Windows VPN client"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "satelite_proxy_lib"
+name = "drvpn_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

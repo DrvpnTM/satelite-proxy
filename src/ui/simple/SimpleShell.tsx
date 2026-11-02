@@ -12,6 +12,7 @@ import { useImportIntent } from "../../ImportIntentContext";
 import { useI18n } from "../../i18n";
 import type { MessageKey } from "../../i18n";
 import { useGlobalShortcuts } from "../../hooks/useGlobalShortcuts";
+import drvpnLogo from "../../../assets/icon/drvpn.png";
 import { UiModeMenu } from "../UiModeMenu";
 import { SimpleConnectPage } from "./SimpleConnectPage";
 
@@ -106,10 +107,8 @@ export function SimpleShell() {
           role="navigation"
           aria-label="Simple"
         >
-          <div className="topnav-brand simple-brand" title="Satelite">
-            <span className="topnav-mark" aria-hidden>
-              ◈
-            </span>
+          <div className="topnav-brand simple-brand" title="DrVPN">
+            <img className="topnav-mark" src={drvpnLogo} alt="" />
           </div>
           <div className="topnav-divider" aria-hidden />
           <nav

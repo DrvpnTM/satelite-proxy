@@ -319,6 +319,10 @@ pub async fn update_subscription(
     auto_update_interval_min: Option<u32>,
     user_agent: Option<String>,
 ) -> Result<ImportResult, String> {
+    if id == crate::domain::DRVPN_FREE_SUBSCRIPTION_ID {
+        return Err("the built-in DrVPN free subscription cannot be edited".into());
+    }
+
     let existing = state
         .with_store(|store| {
             store

@@ -4,7 +4,7 @@
 //! The OS picks one default; without claiming, clicks often open Verge / Sparkle / FlClash.
 
 /// Bundle id from `tauri.conf.json` → `identifier`.
-const BUNDLE_ID: &str = "com.satelite.proxy";
+const BUNDLE_ID: &str = "net.drvpn.desktop";
 
 /// Schemes we handle (must match `plugins.deep-link.desktop.schemes`).
 const SCHEMES: &[&str] = &["clash", "sing-box", "singbox"];

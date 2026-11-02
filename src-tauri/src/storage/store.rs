@@ -3,8 +3,9 @@ use crate::domain::{
     is_factory_set_id, sanitize_rules, AppSettings, ChainHop, DnsAction, DnsRuleSetKind,
     DnsSettings, DomainMatcher, PoolMode, ProxyNode, Rule, RuleSet, RuleSetDnsStrategy,
     RuleSetOwnership, RuleSetStrategy, RuleSetSummary, RuleTarget, RuleType, Subscription,
-    BUILTIN_REMOTE_RULE_SETS, BUILTIN_SET_ID, BUILTIN_SET_NAME, GENERAL_SET_ID, GENERAL_SET_NAME,
-    LEGACY_BUILTIN_REMOTE_IDS,
+    SubscriptionSource, BUILTIN_REMOTE_RULE_SETS, BUILTIN_SET_ID, BUILTIN_SET_NAME,
+    DRVPN_FREE_SUBSCRIPTION_ID, DRVPN_FREE_SUBSCRIPTION_NAME, DRVPN_FREE_SUBSCRIPTION_URL,
+    GENERAL_SET_ID, GENERAL_SET_NAME, LEGACY_BUILTIN_REMOTE_IDS,
 };
 use crate::error::{AppError, AppResult};
 use serde::de::DeserializeOwned;
@@ -106,6 +107,7 @@ impl AppStore {
         store.migrate_file_sources_to_copied_text();
         store.migrate_chain_feature();
         store.migrate_subscription_scoped_node_ids();
+        store.ensure_drvpn_free_subscription();
         store.ensure_subscription_enable_policy();
         // Self-heal legacy stores that already contain colliding node ids
         // (same name/server/port/protocol, different credentials) — they
@@ -156,7 +158,7 @@ impl AppStore {
             }
         }
         // Persist migrations (new rule files) so they survive read-only sessions.
-        let _ = store.save(path);
+        store.save(path)?;
         Ok(store)
     }
 
@@ -853,7 +855,41 @@ impl AppStore {
         Ok(())
     }
 
+    fn ensure_drvpn_free_subscription(&mut self) {
+        if self
+            .subscriptions
+            .iter()
+            .any(|sub| sub.id == DRVPN_FREE_SUBSCRIPTION_ID)
+        {
+            return;
+        }
+
+        let enabled = self.subscriptions.is_empty();
+        self.subscriptions.push(Subscription {
+            id: DRVPN_FREE_SUBSCRIPTION_ID.into(),
+            name: DRVPN_FREE_SUBSCRIPTION_NAME.into(),
+            source: SubscriptionSource::Url {
+                url: DRVPN_FREE_SUBSCRIPTION_URL.into(),
+            },
+            last_update: 0,
+            node_count: 0,
+            enabled,
+            format: None,
+            skipped_count: 0,
+            via_proxy: false,
+            auto_update: true,
+            auto_update_interval_min: 360,
+            traffic: None,
+            user_agent: None,
+        });
+    }
+
     pub fn remove_subscription(&mut self, id: &str) -> AppResult<()> {
+        if id == DRVPN_FREE_SUBSCRIPTION_ID {
+            return Err(AppError::Config(
+                "the built-in DrVPN free subscription cannot be removed".into(),
+            ));
+        }
         let before = self.subscriptions.len();
         self.subscriptions.retain(|s| s.id != id);
         if self.subscriptions.len() == before {
@@ -2362,6 +2398,39 @@ mod tests {
     }
 
     #[test]
+    fn load_seeds_one_persistent_drvpn_free_subscription() {
+        let path = test_store_path("drvpn-free");
+        let mut store = AppStore::load(&path, None).unwrap();
+        let free = store
+            .get_subscription(DRVPN_FREE_SUBSCRIPTION_ID)
+            .expect("DrVPN free subscription is seeded");
+        assert_eq!(free.name, DRVPN_FREE_SUBSCRIPTION_NAME);
+        assert!(matches!(
+            &free.source,
+            SubscriptionSource::Url { url } if url.as_str() == DRVPN_FREE_SUBSCRIPTION_URL
+        ));
+        assert!(free.enabled);
+        assert!(free.auto_update);
+        assert_eq!(free.auto_update_interval_min, 360);
+
+        assert!(store
+            .remove_subscription(DRVPN_FREE_SUBSCRIPTION_ID)
+            .is_err());
+        drop(store);
+
+        let reloaded = AppStore::load(&path, None).unwrap();
+        assert_eq!(
+            reloaded
+                .subscriptions
+                .iter()
+                .filter(|sub| sub.id == DRVPN_FREE_SUBSCRIPTION_ID)
+                .count(),
+            1
+        );
+        fs::remove_dir_all(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
     fn load_self_heals_duplicate_node_ids() {
         use crate::domain::{Protocol, ProtocolConfig, ProxyNode};
         let mk = |id: &str, password: &str| StoredNode {
@@ -3156,8 +3225,19 @@ mod tests {
         .unwrap();
 
         let loaded = AppStore::load(&path, None).unwrap();
-        assert_eq!(loaded.subscriptions.len(), 1);
-        assert_eq!(loaded.subscriptions[0].name, "ok");
+        assert_eq!(loaded.subscriptions.len(), 2);
+        assert!(loaded
+            .subscriptions
+            .iter()
+            .any(|subscription| subscription.id == "keep" && subscription.name == "ok"));
+        assert!(loaded
+            .subscriptions
+            .iter()
+            .any(|subscription| subscription.id == DRVPN_FREE_SUBSCRIPTION_ID));
+        assert!(!loaded
+            .subscriptions
+            .iter()
+            .any(|subscription| subscription.id == "future"));
         assert_eq!(loaded.settings.mixed_port, 2345);
         assert!(corrupt_snapshots(&path).is_empty());
 
@@ -3174,8 +3254,15 @@ mod tests {
         fs::write(&snapshot, serde_json::to_string(&rich).unwrap()).unwrap();
 
         let recovered = AppStore::load(&path, None).unwrap();
-        assert_eq!(recovered.subscriptions.len(), 1);
-        assert_eq!(recovered.subscriptions[0].name, "keep-me");
+        assert_eq!(recovered.subscriptions.len(), 2);
+        assert!(recovered
+            .subscriptions
+            .iter()
+            .any(|subscription| subscription.name == "keep-me"));
+        assert!(recovered
+            .subscriptions
+            .iter()
+            .any(|subscription| subscription.id == DRVPN_FREE_SUBSCRIPTION_ID));
 
         fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
@@ -3476,8 +3563,9 @@ mod tests {
             ..AppStore::default()
         };
         store.rule_sets.push(legacy.clone());
-        store.save(&path).unwrap();
-        let loaded = AppStore::load(&path, Some(&dir.join("res"))).unwrap();
+        let legacy_path = path.with_file_name("store-legacy.json");
+        store.save(&legacy_path).unwrap();
+        let loaded = AppStore::load(&legacy_path, Some(&dir.join("res"))).unwrap();
         let set = loaded.get_rule_set(BUILTIN_SET_ID).unwrap();
         assert!(!set.builtin);
         assert_eq!(set.ownership, RuleSetOwnership::User);

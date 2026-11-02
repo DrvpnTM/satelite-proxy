@@ -119,7 +119,7 @@ mod tests {
 
     fn temp_root(tag: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "satelite-portable-{tag}-{}-{}",
+            "drvpn-portable-{tag}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -149,7 +149,7 @@ mod tests {
 
     #[test]
     fn webview_data_dir_sits_next_to_exe() {
-        let root = Path::new("X:/Satelite-Portable");
+        let root = Path::new("X:/DrVPN-Portable");
         assert_eq!(webview_data_dir_in(root), root.join("webview"));
     }
 }

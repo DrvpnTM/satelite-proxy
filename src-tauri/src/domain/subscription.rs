@@ -1,5 +1,10 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+pub const DRVPN_FREE_SUBSCRIPTION_ID: &str = "drvpn-free";
+pub const DRVPN_FREE_SUBSCRIPTION_NAME: &str = "سرور رایگان دکتر وی پی ان";
+pub const DRVPN_FREE_SUBSCRIPTION_URL: &str =
+    "https://raw.githubusercontent.com/DrvpnTM/vpn/HEAD/sub_base64.txt";
+
 /// Kernel a complete custom config ("自定义配置") targets. Detected at import
 /// from the body itself (sing-box JSON / mihomo Clash YAML / Xray JSON).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

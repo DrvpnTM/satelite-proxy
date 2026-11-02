@@ -15,8 +15,8 @@ use std::sync::Arc;
 use tar::Archive;
 
 const APP_GITHUB_LATEST: &str =
-    "https://api.github.com/repos/zn0wii/satelite-proxy/releases/latest";
-const APP_RELEASES_PAGE: &str = "https://github.com/zn0wii/satelite-proxy/releases/latest";
+    "https://api.github.com/repos/DrvpnTM/satelite-proxy/releases/latest";
+const APP_RELEASES_PAGE: &str = "https://github.com/DrvpnTM/satelite-proxy/releases/latest";
 const MAX_CORE_ARCHIVE_BYTES: usize = 256 * 1024 * 1024;
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -213,7 +213,7 @@ async fn fetch_release_by_tag_with_proxy(
     Ok(release_info_from_tag(kind, &tag, platform))
 }
 
-/// Latest release tag of the app itself (zn0wii/satelite-proxy), used by the
+/// Latest release tag of the app itself (DrvpnTM/satelite-proxy), used by the
 /// Settings version tab to flag app updates. Tag only — no asset picking,
 /// and unlike the core check there is no pinned fallback: if the API is
 /// unreachable the caller surfaces the error instead of guessing.
@@ -368,7 +368,7 @@ fn http_client_with_redirect(
     let mut builder = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(5))
         .timeout(std::time::Duration::from_secs(120))
-        .user_agent("SateliteProxy/0.1 (core-downloader)")
+        .user_agent("DrVPN/0.1 (core-downloader)")
         .redirect(policy);
     if let Some(proxy_url) = proxy_url {
         builder = builder.proxy(
@@ -387,7 +387,7 @@ mod app_update_tests {
     fn extracts_tag_from_absolute_url() {
         assert_eq!(
             extract_tag_from_release_url(
-                "https://github.com/zn0wii/satelite-proxy/releases/tag/1.0.9"
+                "https://github.com/DrvpnTM/satelite-proxy/releases/tag/1.0.9"
             )
             .unwrap(),
             "v1.0.9"
@@ -397,7 +397,7 @@ mod app_update_tests {
     #[test]
     fn extracts_tag_from_relative_url() {
         assert_eq!(
-            extract_tag_from_release_url("/zn0wii/satelite-proxy/releases/tag/v1.1.0").unwrap(),
+            extract_tag_from_release_url("/DrvpnTM/satelite-proxy/releases/tag/v1.1.0").unwrap(),
             "v1.1.0"
         );
     }
@@ -406,7 +406,7 @@ mod app_update_tests {
     fn strips_query_string() {
         assert_eq!(
             extract_tag_from_release_url(
-                "https://github.com/zn0wii/satelite-proxy/releases/tag/1.2.0?foo=bar"
+                "https://github.com/DrvpnTM/satelite-proxy/releases/tag/1.2.0?foo=bar"
             )
             .unwrap(),
             "v1.2.0"
@@ -415,7 +415,7 @@ mod app_update_tests {
 
     #[test]
     fn rejects_urls_without_a_tag_segment() {
-        assert!(extract_tag_from_release_url("https://github.com/zn0wii/satelite-proxy").is_err());
+        assert!(extract_tag_from_release_url("https://github.com/DrvpnTM/satelite-proxy").is_err());
     }
 }
 
@@ -728,17 +728,17 @@ fn extract_binary_from_tar_gz(kind: CoreKind, archive: &Path, dest: &Path) -> Ap
 /// (historical layouts) outrank mihomo's platform-suffixed inner exe.
 fn zip_binary_match_rank(kind: CoreKind, file_name: &str) -> Option<u8> {
     let want = kind.binary_name();
+    let stem = want.strip_suffix(".exe").unwrap_or(want);
     if file_name == want
+        || file_name == stem
+        || file_name == format!("{stem}.exe")
         || tar_binary_matches(kind, file_name)
-        || file_name
-            .strip_suffix(want.strip_suffix(".exe").unwrap_or(want))
-            .is_some()
+        || file_name.strip_suffix(stem).is_some()
     {
         return Some(2);
     }
     // mihomo Windows zips carry the platform-suffixed exe name
     // (`mihomo-windows-amd64.exe`), not the plain `mihomo.exe`.
-    let stem = want.strip_suffix(".exe").unwrap_or(want);
     if kind == CoreKind::Mihomo
         && file_name.starts_with(&format!("{stem}-"))
         && file_name.ends_with(".exe")

@@ -4,7 +4,7 @@
 fn main() {
     #[cfg(target_os = "linux")]
     apply_webkitgtk_workarounds();
-    satelite_proxy_lib::run()
+    drvpn_desktop_lib::run()
 }
 
 // WebKitGTK ≥2.42 的 DMA-BUF 渲染器在部分 Wayland/Mesa/NVIDIA 栈上创建 surfaceless EGL

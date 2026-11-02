@@ -54,12 +54,12 @@ fn show_startup_failure(
         })
         .unwrap_or_default();
     let message = format!(
-        "Satelite 无法加载本地数据，已停止启动以避免覆盖现有配置。\n\n错误：{error}{location}"
+        "DrVPN 无法加载本地数据，已停止启动以避免覆盖现有配置。\n\n错误：{error}{location}"
     );
     let dialog = app
         .dialog()
         .message(message)
-        .title("Satelite 启动失败")
+        .title("DrVPN 启动失败")
         .kind(MessageDialogKind::Error);
     if let Some(path) = data_dir.map(std::path::Path::to_path_buf) {
         dialog
@@ -189,7 +189,7 @@ pub fn run() {
             let _ = autostart::set_launch_at_login(launch);
 
             app.manage(app_state);
-            app_log::info("app", "Satelite started");
+            app_log::info("app", "DrVPN started");
 
             // Born at the persisted window size and position before the
             // WebView paints — resizing or moving after paint reads as an
@@ -320,7 +320,7 @@ pub fn run() {
             }
 
             // Multiple clients share clash:// · sing-box:// — claim default so
-            // browser "one-click import" opens Satelite (not Sparkle / Verge / …).
+            // Browser one-click imports open DrVPN (not another proxy client).
             url_scheme::claim_subscription_schemes();
 
             // Silent start: hide only (do not destroy at launch — that can exit the app).

@@ -405,7 +405,7 @@ pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
             .map(|l| l.size)
             .unwrap_or_else(|| size_for_ui_mode(&mode));
         let builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-            .title("Satelite")
+            .title("DrVPN")
             .inner_size(w, h)
             .fullscreen(false)
             // Native底色 follows the stored theme so the recreated window

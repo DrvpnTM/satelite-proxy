@@ -1,51 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the Satelite app icon set (PNGs / .ico / .icns).
+"""Generate DrVPN desktop icons (PNGs / .ico / .icns).
 
-  pip install pillow
-  python3 scripts/generate-app-icons.py
-
-Everything (icon.png / .ico / Square*Logo) is resampled from
-assets/icon/ic_launcher-web.png (1024px rounded tile; corners are baked
-into the source alpha, content centered at ~86% of the canvas — when
-swapping in a new source, trim alpha<4 glow noise, force-square the
-content, then center it at that ratio). The .icns writer is pure Python
-(PNG payloads), so no iconutil / macOS needed.
-
-Windows outputs (.ico entries, Square*Logo, StoreLogo) come from the mac
-source AS-IS since 2026-09-24 (user request: the Windows app icon should
-match the macOS look): same treatment as the .icns — resized only, no
-bbox crop, no TILE_ART_SCALE renormalization, no halo. The tile already
-sits at ~94% of its canvas with the hand-tuned radius, so nothing needs
-normalizing away.
-
-Linux PNG outputs (icon.png, 32x32, 128x128@2x) still re-normalize the
-web tile to TILE_ART_SCALE (~96% of the canvas, own rounded corners
-kept, corners stay transparent) plus a soft ice-blue outer halo
-(TILE_HALO_*): the source's 14% transparent margin made the icon read
-noticeably smaller than full-square apps, and the dark glyph needs the
-halo ring to read at full size on dark taskbars. That normalization +
-halo pipeline used to feed the Windows products too (2026-09-24 morning)
-and was replaced by the mac-source pass-through above the same day; it
-now feeds only these PNGs. The opaque-base full-bleed variant stays
-forbidden on Windows/Linux either way (tried & reverted 2026-09-22: the
-~25% tile radius recedes past a 15% mask near the corners and the base
-showed as square corners).
-
-The .icns payloads (make_mac_icon) come from a separate, hand-tuned
-source: assets/icon/ic_launcher-mac.png. It's used as-is (only resized
-to each target resolution, no crop/rescale/recenter/base/mask) — content
-ratio and corner radius are already baked in by hand, tuned to look
-right both on macOS <= 15 (shows the .icns bitmap unmasked, so this
-source's own shape is exactly what renders) and macOS 26 Tahoe (re-masks
-every icon with the system squircle and plates transparent margins with
-a light backdrop). See mac_icon_1024 for the history of the two earlier
-programmatic derivations this replaced.
-
-Windows / Linux outputs keep a rounded transparent-margin design — those
-platforms render transparency natively (Windows ico/Square* via the mac
-source, Linux pngs via the tile pipeline).
-
-Tray icons live in generate-tray-icons.py — this script never touches them.
+Run with `python3 scripts/generate-app-icons.py`; Pillow is required.
+All output sizes are derived from assets/icon/drvpn.png. The .icns writer
+uses PNG payloads and does not require macOS tooling.
 """
 from __future__ import annotations
 
@@ -57,8 +15,8 @@ from PIL import Image, ImageChops, ImageFilter, ImageStat
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "src-tauri" / "icons"
-APP_ICON_SOURCE = ROOT / "assets" / "icon" / "ic_launcher-web.png"
-MAC_ICON_SOURCE = ROOT / "assets" / "icon" / "ic_launcher-mac.png"
+APP_ICON_SOURCE = ROOT / "assets" / "icon" / "drvpn.png"
+MAC_ICON_SOURCE = ROOT / "assets" / "icon" / "drvpn.png"
 
 # Windows/Linux variant: the tile itself upscaled onto the canvas, own
 # rounded corners intact, transparent corners (no base, no extra mask).
@@ -148,24 +106,7 @@ def make_app_icon(size: int) -> Image.Image:
 
 
 def mac_icon_1024() -> Image.Image:
-    """macOS variant: ic_launcher-mac.png as-is, resized to the 1024
-    canvas — no bbox crop, no rescale/recenter, no base, no extra mask.
-
-    This source is a hand-tuned macOS-only edit (content ratio + corner
-    radius already set to look right on both macOS <= 15, which shows
-    the .icns bitmap unmasked, and macOS 26 Tahoe, which re-masks it with
-    the system squircle). Do not run it through the ic_launcher-web.png
-    bbox/scale pipeline used for the Windows/Linux tile — that pipeline
-    is for normalizing a differently-proportioned source and would just
-    re-crop/rescale an image that's already at its intended proportions.
-
-    History: an earlier version derived this from ic_launcher-web.png by
-    cropping to content bbox, scaling to MAC_ART_SCALE, and centering on
-    a transparent canvas (no painted base) — replacing an even earlier
-    version that also painted an opaque MAC_ICON_BG rectangle behind the
-    tile and re-masked it with its own corner radius. Both were dropped
-    in favor of this hand-tuned source once available.
-    """
+    """macOS variant: resize the DrVPN source to the 1024px canvas."""
     global _MAC_ICON_1024
     if _MAC_ICON_1024 is None:
         art = mac_icon_source()
@@ -189,12 +130,11 @@ def make_mac_icon(size: int) -> Image.Image:
 def _ico_entry(size: int) -> Image.Image:
     """One .ico entry, tuned for Windows legibility (2026-09 recipe).
 
-    Base is the mac source as-is (see module docstring): entries >48px
+    Base is the DrVPN source (see module docstring): entries >48px
     ride the plain make_mac_icon halving pipeline, entries <=48px are
     single-step LANCZOS downscales from the 1024 canvas with a mild
     unsharp pass on RGB only (alpha keeps its clean AA) and, for <=32px,
-    a slight midtone lift — the frost artwork is a dark planet on a dark
-    tile with soft glow and reads as mush when merely resampled at
+    a slight midtone lift to keep the DrVPN logo legible when resampled at
     16-24px.
     """
     if size > 48:
@@ -264,7 +204,7 @@ def main() -> None:
         ("128x128@2x.png", 256),
     ]:
         make_app_icon(sz).save(OUT / name, format="PNG")
-    # Windows store/msi assets share the mac source so they match the .ico.
+    # Windows store assets use the same source as the .ico.
     for name, sz in [
         ("Square30x30Logo.png", 30),
         ("Square44x44Logo.png", 44),

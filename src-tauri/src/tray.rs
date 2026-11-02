@@ -243,7 +243,7 @@ const TRAY_LABELS_ZH: TrayLabels = TrayLabels {
 };
 
 const TRAY_LABELS_EN: TrayLabels = TrayLabels {
-    show: "Open Satelite",
+    show: "Open DrVPN",
     start: "Start Proxy",
     stop: "Stop Proxy",
     restart: "Restart Core",
@@ -499,7 +499,7 @@ pub fn setup_tray<R: TauriRuntime>(app: &AppHandle<R>) -> tauri::Result<()> {
         // right click = menu. macOS keeps the native menu-on-left-click behavior.
         // The flag is a no-op on Linux.
         .show_menu_on_left_click(!cfg!(target_os = "windows"))
-        .tooltip("Satelite")
+        .tooltip("DrVPN")
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => {
                 window_ctrl::show_main(app);

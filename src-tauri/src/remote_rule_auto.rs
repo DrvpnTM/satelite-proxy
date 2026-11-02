@@ -423,7 +423,7 @@ async fn download(url: &str, proxy_port: Option<u16>) -> Result<Vec<u8>, String>
     let mut builder = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(45))
-        .user_agent("Satelite/1 remote-rule-set");
+        .user_agent("DrVPN/0.1 remote-rule-set");
     if let Some(port) = proxy_port {
         builder = builder.proxy(
             reqwest::Proxy::all(format!("http://127.0.0.1:{port}")).map_err(|e| e.to_string())?,

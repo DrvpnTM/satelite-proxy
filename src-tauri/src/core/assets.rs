@@ -601,7 +601,7 @@ mod tests {
             .join("mihomo-geodata");
         std::fs::create_dir_all(&bundled).unwrap();
         std::fs::write(bundled.join("Country.mmdb"), b"fake-mmdb").unwrap();
-        std::fs::write(bundled.join("geosite.dat"), b"fake-mrs").unwrap();
+        std::fs::write(bundled.join("GeoSite.dat"), b"fake-mrs").unwrap();
 
         assert!(stage_bundled_mihomo_geodata(
             &app_data,
@@ -612,7 +612,7 @@ mod tests {
         // Xray's v2ray-format geosite.dat).
         let home = mihomo_home(&app_data);
         assert!(home.join("Country.mmdb").is_file());
-        assert!(home.join("geosite.dat").is_file());
+        assert!(home.join("GeoSite.dat").is_file());
         assert!(!crate::core::paths::core_dir(&app_data)
             .join("Country.mmdb")
             .is_file());

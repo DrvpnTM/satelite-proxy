@@ -112,12 +112,12 @@ if ($Bundle -eq "portable") {
 if ($Bundle -eq "portable") {
   $Version = (Get-Content (Join-Path $ROOT "package.json") -Raw | ConvertFrom-Json).version
   $StageRoot = Join-Path $ROOT "src-tauri\target\release\portable-stage"
-  $Stage = Join-Path $StageRoot "Satelite-Portable"
+  $Stage = Join-Path $StageRoot "DrVPN-Portable"
   if (Test-Path $StageRoot) { Remove-Item -Recurse -Force $StageRoot }
   New-Item -ItemType Directory -Force -Path $Stage | Out-Null
 
   # Release exe (frontend + Rust build output).
-  $Exe = Join-Path $ROOT "src-tauri\target\release\satelite-proxy.exe"
+  $Exe = Join-Path $ROOT "src-tauri\target\release\drvpn-desktop.exe"
   if (-not (Test-Path $Exe)) {
     Write-Error "Build finished but $Exe is missing"
     exit 1
@@ -142,13 +142,13 @@ if ($Bundle -eq "portable") {
 
   # Portable-mode marker: exe-dir data root (see src-tauri/src/portable.rs).
   Set-Content -Path (Join-Path $Stage "portable.flag") `
-    -Value "Satelite portable marker - keep this file next to satelite-proxy.exe." -NoNewline
+    -Value "DrVPN portable marker - keep this file next to drvpn-desktop.exe." -NoNewline
 
   Set-Content -Path (Join-Path $Stage "README.txt") -Encoding utf8 -Value @"
-Satelite 便携版 (Portable) $Version
+DrVPN 便携版 (Portable) $Version
 ========================================
 
-解压后直接运行 satelite-proxy.exe 即可，无需安装。
+解压后直接运行 drvpn-desktop.exe 即可，无需安装。
 
 - 所有数据都保存在本目录，不写入 AppData：
     data/             订阅与设置 (store.json)
@@ -166,9 +166,9 @@ Satelite 便携版 (Portable) $Version
 - 开机自启动记录的是本程序的绝对路径，移动目录后请在设置中关闭再重新开启。
 - 与安装版不可同时运行（单实例互斥）。
 
-Satelite Portable $Version
+DrVPN Portable $Version
 ========================================
-Extract anywhere and run satelite-proxy.exe. All data stays in this folder.
+Extract anywhere and run drvpn-desktop.exe. All data stays in this folder.
 Keep portable.flag next to the exe - deleting it falls back to installed-app
 behavior (data goes to AppData). Requires the Microsoft Edge WebView2 runtime
 (preinstalled on Windows 10/11). After moving the folder, relaunch once to
@@ -178,7 +178,7 @@ portable and installed editions cannot run at the same time.
 
   $OutDir = Join-Path $ROOT "src-tauri\target\release\bundle\portable"
   New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-  $Artifact = Join-Path $OutDir "Satelite_${Version}_x64_portable.zip"
+  $Artifact = Join-Path $OutDir "DrVPN_${Version}_x64_portable.zip"
   if (Test-Path $Artifact) { Remove-Item -Force $Artifact }
   Compress-Archive -Path $Stage -DestinationPath $Artifact -CompressionLevel Optimal
 } else {

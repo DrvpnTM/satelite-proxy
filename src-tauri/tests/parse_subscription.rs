@@ -1,4 +1,4 @@
-use satelite_proxy_lib::{parse_subscription, Protocol, SubscriptionFormat};
+use drvpn_desktop_lib::{parse_subscription, Protocol, SubscriptionFormat};
 
 #[test]
 fn fixture_clash_yaml() {

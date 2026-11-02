@@ -1,7 +1,7 @@
 //! Live download of sing-box core (network required).
-//! Run: `cargo test -p satelite-proxy --test download_core_live -- --ignored --nocapture`
+//! Run: `cargo test -p drvpn-desktop --test download_core_live -- --ignored --nocapture`
 
-use satelite_proxy_lib::download_core_to;
+use drvpn_desktop_lib::download_core_to;
 use std::path::PathBuf;
 
 #[tokio::test]

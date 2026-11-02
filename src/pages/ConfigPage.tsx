@@ -39,6 +39,7 @@ import type {
 
 
 const REFRESH_ALL_CONCURRENCY = 4;
+const DRVPN_FREE_SUBSCRIPTION_ID = "drvpn-free";
 
 /** One subscription's skipped-node report entry (import / manual refresh). */
 interface SkippedReport {
@@ -838,18 +839,20 @@ export function ConfigPage() {
                 </button>
                 {menuId === item.id && (
                   <div className="sub-menu-pop" role="menu">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="sub-menu-item"
-                      disabled={busy}
-                      onClick={() => {
-                        setMenuId(null);
-                        void openEdit(item.id);
-                      }}
-                    >
-                      {t("config.menuEdit")}
-                    </button>
+                    {item.id !== DRVPN_FREE_SUBSCRIPTION_ID && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="sub-menu-item"
+                        disabled={busy}
+                        onClick={() => {
+                          setMenuId(null);
+                          void openEdit(item.id);
+                        }}
+                      >
+                        {t("config.menuEdit")}
+                      </button>
+                    )}
                     {item.source_kind === "url" && (
                       <button
                         type="button"
@@ -907,18 +910,20 @@ export function ConfigPage() {
                           {t("config.menuRenameNodes")}
                         </button>
                       )}
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="sub-menu-item danger"
-                      disabled={busy}
-                      onClick={() => {
-                        setMenuId(null);
-                        void onRemove(item.id);
-                      }}
-                    >
-                      {t("config.menuDelete")}
-                    </button>
+                    {item.id !== DRVPN_FREE_SUBSCRIPTION_ID && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="sub-menu-item danger"
+                        disabled={busy}
+                        onClick={() => {
+                          setMenuId(null);
+                          void onRemove(item.id);
+                        }}
+                      >
+                        {t("config.menuDelete")}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

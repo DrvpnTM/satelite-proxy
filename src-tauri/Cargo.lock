@@ -940,6 +940,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "drvpn-desktop"
+version = "1.0.47"
+dependencies = [
+ "base64 0.22.1",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
+ "flate2",
+ "hex",
+ "idna",
+ "if-addrs",
+ "libc",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-deep-link",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
+ "thiserror 2.0.19",
+ "tokio",
+ "tungstenite",
+ "ureq",
+ "url",
+ "urlencoding",
+ "windows",
+ "zip",
+]
+
+[[package]]
 name = "dtoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3324,40 +3358,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "satelite-proxy"
-version = "1.0.4"
-dependencies = [
- "base64 0.22.1",
- "core-foundation 0.10.1",
- "core-foundation-sys",
- "flate2",
- "hex",
- "idna",
- "if-addrs",
- "libc",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-deep-link",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-single-instance",
- "thiserror 2.0.19",
- "tokio",
- "tungstenite",
- "ureq",
- "url",
- "urlencoding",
- "windows",
- "zip",
 ]
 
 [[package]]

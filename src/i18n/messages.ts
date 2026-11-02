@@ -251,7 +251,7 @@ const en = {
   "settings.closeToTrayDesc":
     "Closing the window keeps tray + core; use tray Quit to exit fully",
   "settings.launchAtLogin": "Launch at login",
-  "settings.launchAtLoginDesc": "Start Satelite when you log into the system",
+  "settings.launchAtLoginDesc": "Start DrVPN when you log into the system",
   "settings.silentStart": "Silent start",
   "settings.silentStartDesc":
     "Launch tray-only; open window from the tray menu",
@@ -435,7 +435,7 @@ const en = {
   "config.supportUnsupportedSection": "{core}: {n} unsupported",
   "config.supportSkippedSection": "Skipped at parse time ({n})",
   "config.supportCopyReport": "Copy report",
-  "config.supportReportTitle": "Satelite core-support report",
+  "config.supportReportTitle": "DrVPN core-support report",
   "config.customBanner":
     "Using custom config “{name}”. Nodes, routing and DNS are disabled.",
   "config.customDisabled": "Unavailable while a custom config is selected",
@@ -456,7 +456,7 @@ const en = {
   "config.using": "In use",
   "config.applyFailed": "Failed to apply config",
   "config.expireNever": "Never expires",
-  "config.reportTitle": "Satelite skipped-nodes report (v{v})",
+  "config.reportTitle": "DrVPN skipped-nodes report (v{v})",
   "config.reportTotal": "{n} nodes were not imported:",
   "config.reportProfile": "Profile: {name}",
   "config.reportSource": "Source: {source}",
@@ -1573,7 +1573,7 @@ const zh: Record<MessageKey, string> = {
   "config.supportUnsupportedSection": "{core} 不支持（{n} 个）",
   "config.supportSkippedSection": "解析期跳过（{n} 个）",
   "config.supportCopyReport": "复制报告",
-  "config.supportReportTitle": "Satelite 内核支持报告",
+  "config.supportReportTitle": "DrVPN 内核支持报告",
   "config.customBanner":
     "正在使用自定义配置「{name}」· 节点 / 路由 / DNS 已禁用",
   "config.customDisabled": "自定义配置模式下不可用",
@@ -1594,7 +1594,7 @@ const zh: Record<MessageKey, string> = {
   "config.using": "使用中",
   "config.applyFailed": "配置应用失败",
   "config.expireNever": "长期有效",
-  "config.reportTitle": "Satelite 跳过节点报告（v{v}）",
+  "config.reportTitle": "DrVPN 跳过节点报告（v{v}）",
   "config.reportTotal": "共 {n} 个节点未能导入：",
   "config.reportProfile": "订阅：{name}",
   "config.reportSource": "来源：{source}",
@@ -1913,7 +1913,7 @@ const zh: Record<MessageKey, string> = {
   "rules.autoUpdateShort": "自动更新：{interval}",
   "rules.routeStrategyAria": "整组路由策略",
   "rules.dnsStrategyAria": "整组 DNS 策略",
-  "rules.remoteDownloadingHint": "正在由 Satelite 下载并校验，完成后自动加载。",
+  "rules.remoteDownloadingHint": "正在由 DrVPN 下载并校验，完成后自动加载。",
   "rules.remoteDownloadFailed": "下载失败：{error}",
   "rules.unknownError": "未知错误",
   "rules.remoteParsedHint": "已解析 {n} 条规则，内核仅加载本地缓存。",

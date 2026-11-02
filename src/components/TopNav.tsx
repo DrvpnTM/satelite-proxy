@@ -6,6 +6,7 @@ import { useVisibleInterval } from "../hooks/useVisibleInterval";
 import { useI18n } from "../i18n";
 import type { MessageKey } from "../i18n/messages";
 import type { NavKey } from "../types";
+import drvpnLogo from "../../assets/icon/drvpn.png";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { UiModeMenu } from "../ui/UiModeMenu";
 
@@ -117,11 +118,9 @@ export function TopNav({ active, onChange }: Props) {
         {/* Clips the ::after glow to the capsule. Must be its own layer —
             overflow on .topnav itself would clip the ⋯ menu popup. */}
         <span className="topnav-glow" aria-hidden />
-        <div className="topnav-brand" title="Satelite">
-          <span className="topnav-mark" aria-hidden>
-            ◈
-          </span>
-          <span className="topnav-brand-text">SATELITE</span>
+        <div className="topnav-brand" title="DrVPN">
+          <img className="topnav-mark" src={drvpnLogo} alt="" />
+          <span className="topnav-brand-text">DRVPN</span>
         </div>
         <div className="topnav-divider" aria-hidden />
         <nav className="topnav-items">

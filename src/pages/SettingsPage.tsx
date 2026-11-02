@@ -69,9 +69,9 @@ const CUSTOM_BLOCKED_TABS = new Set([
 ]);
 
 /** Repository link shown in the bottom-right corner of the settings page. */
-const PROJECT_URL = "https://github.com/zn0wii/satelite-proxy/";
+const PROJECT_URL = "https://drvpn.net/";
 /** Always-latest app release page, opened from the version tab. */
-const RELEASES_URL = "https://github.com/zn0wii/satelite-proxy/releases/latest";
+const RELEASES_URL = "https://github.com/DrvpnTM/satelite-proxy/releases/latest";
 
 // Session-level memory of the latest MANUAL core update check. The network
 // check fires only on the per-core "检查" button (2026-09: it used to fire
@@ -1853,7 +1853,7 @@ export function SettingsPage() {
                 ◈
               </div>
               <div className="app-bar-id">
-                <span className="ver-name">Satelite</span>
+                <span className="ver-name">DrVPN</span>
                 <span className="ver-sub muted">{t("settings.appTagline")}</span>
               </div>
               <div className="app-bar-ver">

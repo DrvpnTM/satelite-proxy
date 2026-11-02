@@ -650,7 +650,7 @@ fn run_privileged_osascript(tool: &Path, args: &[&str]) -> AppResult<(i32, Strin
     let cmdline = build_tool_cmdline(tool, args);
     let shell = format!("{cmdline} 2>&1; printf '\\n__SATELITE_EXIT__:%d\\n' $?");
     let inner = format!(
-        "do shell script \"{}\" with administrator privileges with prompt \"Satelite 需要管理员权限以授权 TUN（为 sing-box 设置 setuid）。系统已启用 pam_tid 时会优先走 sudo 指纹；若看到密码框说明指纹路径不可用。\"",
+        "do shell script \"{}\" with administrator privileges with prompt \"DrVPN 需要管理员权限以授权 TUN（为 sing-box 设置 setuid）。系统已启用 pam_tid 时会优先走 sudo 指纹；若看到密码框说明指纹路径不可用。\"",
         escape_applescript_string(&shell)
     );
 

@@ -125,7 +125,7 @@ jobs:
           COPYFILE_DISABLE: "1"
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "Satelite ${{ github.ref_name }}"
+          releaseName: "DrVPN ${{ github.ref_name }}"
           releaseBody: "Automatic release"
           releaseDraft: true
           prerelease: false
