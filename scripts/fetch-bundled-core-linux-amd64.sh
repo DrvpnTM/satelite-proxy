@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-1.13.18}"
+VER="${1:-1.14.4}"
 OUT_DIR="$ROOT/src-tauri/resources/bin/linux-amd64"
 ASSET="sing-box-${VER}-linux-amd64.tar.gz"
 URL="https://github.com/SagerNet/sing-box/releases/download/v${VER}/${ASSET}"

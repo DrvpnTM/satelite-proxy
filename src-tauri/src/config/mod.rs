@@ -6,7 +6,7 @@ mod mihomo;
 mod punycode;
 mod rule_files;
 mod write;
-mod xray;
+pub(crate) mod xray;
 
 pub use builder::{
     build_singbox_config, chain_hop_outbound_tag, explicit_set_pool_tags, generate_api_secret,

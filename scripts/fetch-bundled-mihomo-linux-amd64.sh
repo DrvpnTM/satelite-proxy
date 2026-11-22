@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-1.19.30}"
+VER="${1:-1.19.34}"
 OUT_DIR="$ROOT/src-tauri/resources/bin/linux-amd64"
 # -compatible = GOAMD64=v1 — the plain amd64 asset is GOAMD64=v3 (AVX2/
 # BMI2) and fatals on pre-Haswell x86_64 CPUs; AES-NI is v1-level anyway.

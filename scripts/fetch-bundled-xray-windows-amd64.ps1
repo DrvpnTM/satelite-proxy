@@ -1,10 +1,10 @@
 # Fetch and stage the bundled Xray core for Windows (amd64).
 # Downloads xray.exe + geosite.dat + geoip.dat from the Xray-windows-64.zip
 # release asset into src-tauri/resources/bin/windows-amd64/.
-# Usage: pwsh scripts/fetch-bundled-xray-windows-amd64.ps1 [-Version 26.3.27]
+# Usage: pwsh scripts/fetch-bundled-xray-windows-amd64.ps1 [-Version 26.11.9]
 [CmdletBinding()]
 param(
-  [string]$Version = "26.3.27",
+  [string]$Version = "26.11.9",
   [string]$Proxy   = $env:HTTPS_PROXY  # e.g. http://127.0.0.1:7890
 )
 

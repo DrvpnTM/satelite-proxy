@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-1.19.30}"
+VER="${1:-1.19.34}"
 PLAT="darwin-arm64"
 OUT_DIR="$ROOT/src-tauri/resources/bin/darwin-arm64"
 ASSET="mihomo-${PLAT}-v${VER}.gz"

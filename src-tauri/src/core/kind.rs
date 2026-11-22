@@ -78,9 +78,9 @@ impl CoreKind {
     /// Pinned version used only when the GitHub API is unreachable.
     pub fn fallback_version(self) -> &'static str {
         match self {
-            Self::SingBox => "v1.13.18",
-            Self::Xray => "v26.3.27",
-            Self::Mihomo => "v1.19.30",
+            Self::SingBox => "v1.14.4",
+            Self::Xray => "v26.11.9",
+            Self::Mihomo => "v1.19.34",
         }
     }
 
@@ -335,6 +335,11 @@ impl CoreKind {
             // hidden under Xray like any other unsupported shape).
             if matches!(node.transport, Some(crate::domain::Transport::Http { .. })) {
                 return Some("Xray v26 已在配置层移除 h2/http 传输");
+            }
+            // Xray v26.10.21+ refuses plain VLESS/Trojan to a public server
+            // (same rule as the generator, `xray::requires_transport_security`).
+            if crate::config::xray::requires_transport_security(node) {
+                return Some("Xray v26.10.21+ 拒绝无 TLS 的 VLESS/Trojan 连接公网服务器（sing-box/mihomo 仍可用）");
             }
         }
         if matches!(

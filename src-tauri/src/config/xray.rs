@@ -1039,6 +1039,15 @@ fn node_to_xray_outbound(node: &ProxyNode) -> AppResult<Value> {
             "h2/http transport was removed in Xray v26: node filtered from this config (sing-box/mihomo still serve it, or switch the node to ws/grpc/xhttp)".into(),
         ));
     }
+    // Xray v26.10.21+ refuses plain VLESS/Trojan (no TLS/REALITY, no VLESS
+    // encryption) to a public address at config load, and one refused
+    // outbound fails the whole config. Fail the node here instead; sing-box
+    // and mihomo still serve it.
+    if requires_transport_security(node) {
+        return Err(AppError::Config(
+            "plain VLESS/Trojan without TLS to a public server is refused by Xray v26.10.21+: node filtered from this config (sing-box/mihomo still serve it)".into(),
+        ));
+    }
     let (protocol, settings) = protocol_settings(node)?;
     let mut obj = Map::new();
     obj.insert("tag".into(), json!(tag));
@@ -1408,6 +1417,33 @@ fn stream_settings(node: &ProxyNode) -> Option<Value> {
     Some(Value::Object(stream))
 }
 
+/// True for a VLESS or Trojan node with no TLS/REALITY whose server is a public
+/// address: Xray v26.10.21+ (`infra/conf/xray.go` `validateOutboundTransportSecurity`)
+/// refuses those at config load unless the address is a private, loopback or
+/// link-local IP or a private domain. Domains other than `localhost` count as
+/// public here: Xray's private-domain list is broader, but treating one too many
+/// as public only filters a node under Xray, while the opposite fails the config.
+pub fn requires_transport_security(node: &ProxyNode) -> bool {
+    use std::net::IpAddr;
+    if !matches!(node.config, ProtocolConfig::Vless { .. } | ProtocolConfig::Trojan { .. }) {
+        return false;
+    }
+    if node.tls.as_ref().is_some_and(|t| t.enabled) {
+        return false;
+    }
+    let host = node.server.trim().trim_start_matches('[').trim_end_matches(']');
+    match host.parse::<IpAddr>() {
+        Ok(IpAddr::V4(ip)) => !(ip.is_private() || ip.is_loopback() || ip.is_link_local()),
+        Ok(IpAddr::V6(ip)) => {
+            let first = ip.segments()[0];
+            let unique_local = (first & 0xfe00) == 0xfc00;
+            let link_local = (first & 0xffc0) == 0xfe80;
+            !(ip.is_loopback() || unique_local || link_local)
+        }
+        Err(_) => !host.trim_end_matches('.').eq_ignore_ascii_case("localhost"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1627,6 +1663,7 @@ mod tests {
         // config over an `extra` it can't unmarshal.
         let mut node = vless_node("xh-badextra", None);
         node.tls = None;
+        node.server = "localhost".into(); // plain VLESS to a public host is refused (v26.10.21+)
         node.transport = Some(Transport::Xhttp {
             path: Some("/upload".into()),
             host: None,
@@ -1636,6 +1673,28 @@ mod tests {
         let built = build_xray_config(&[node], &default_opts()).expect("build");
         let xh = &built.value["outbounds"][0]["streamSettings"]["xhttpSettings"];
         assert!(xh.get("extra").is_none());
+    }
+
+    #[test]
+    fn plain_vless_trojan_to_public_server_is_rejected() {
+        // Xray v26.10.21+ refuses these at config load; they must be filtered.
+        let mut node = vless_node("plain", None);
+        node.tls = None;
+        node.server = "203.0.113.7".into();
+        assert!(requires_transport_security(&node));
+        node.server = "cdn.example.com".into();
+        assert!(requires_transport_security(&node));
+        let msg = build_xray_config(&[node.clone()], &default_opts()).unwrap_err().to_string();
+        assert!(msg.contains("refused by Xray"), "got: {msg}");
+        for private in ["10.0.0.2", "192.168.1.5", "127.0.0.1", "localhost", "[fd00::1]", "fe80::1"] {
+            node.server = private.into();
+            assert!(!requires_transport_security(&node), "{private} is private");
+        }
+        node.server = "203.0.113.7".into();
+        assert!(CoreKind::Xray.node_unsupported_reason(&node).is_some());
+        node.tls = vless_node("tls", None).tls;
+        assert!(node.tls.as_ref().is_some_and(|t| t.enabled), "helper node carries TLS");
+        assert!(!requires_transport_security(&node));
     }
 
     #[test]
@@ -3040,6 +3099,15 @@ mod tests {
                 ),
                 Expect::GenReject,
             ));
+        }
+
+        // Xray v26.10.21+ refuses plain VLESS/Trojan to a public server at
+        // config load; the generator must filter those (rule in
+        // `requires_transport_security`), whatever the combo expected.
+        for (_, node, expect) in combos.iter_mut() {
+            if requires_transport_security(node) {
+                *expect = Expect::GenReject;
+            }
         }
 
         let total = combos.len();

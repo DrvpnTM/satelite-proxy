@@ -1,9 +1,9 @@
 # Fetch and stage the bundled sing-box core for Windows (amd64).
 # Downloads sing-box + libcronet.dll into src-tauri/resources/bin/windows-amd64/.
-# Usage: pwsh scripts/fetch-bundled-core-windows-amd64.ps1 [-Version 1.13.18]
+# Usage: pwsh scripts/fetch-bundled-core-windows-amd64.ps1 [-Version 1.14.4]
 [CmdletBinding()]
 param(
-  [string]$Version = "1.13.18",
+  [string]$Version = "1.14.4",
   [string]$Proxy   = $env:HTTPS_PROXY  # e.g. http://127.0.0.1:7890
 )
 

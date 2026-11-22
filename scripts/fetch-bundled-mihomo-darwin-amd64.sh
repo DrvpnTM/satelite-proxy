@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-1.19.30}"
+VER="${1:-1.19.34}"
 PLAT="darwin-amd64"
 OUT_DIR="$ROOT/src-tauri/resources/bin/darwin-amd64"
 # -compatible = GOAMD64=v1. mihomo's plain amd64 assets are GOAMD64=v3

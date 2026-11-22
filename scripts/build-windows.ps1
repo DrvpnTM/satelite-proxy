@@ -11,7 +11,7 @@ param(
   [string]$Bundle = "nsis",
   [switch]$SingboxOnly,
   [string]$Proxy  = $env:HTTPS_PROXY,
-  [string]$CoreVersion = "1.13.18"
+  [string]$CoreVersion = "1.14.4"
 )
 
 $ErrorActionPreference = "Stop"

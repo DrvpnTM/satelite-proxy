@@ -210,7 +210,7 @@ mod kernel_selection_poll_tests {
                         id: "node-a".into(),
                         name: "node-a".into(),
                         protocol: crate::domain::Protocol::Trojan,
-                        server: "example.com".into(),
+                        server: "localhost".into(), // plain Trojan to a public host is refused by Xray v26.10.21+
                         port: 443,
                         tls: None,
                         transport: None,

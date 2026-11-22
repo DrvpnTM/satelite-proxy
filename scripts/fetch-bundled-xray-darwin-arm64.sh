@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-26.3.27}"
+VER="${1:-26.11.9}"
 OUT_DIR="$ROOT/src-tauri/resources/bin/darwin-arm64"
 ASSET="Xray-macos-arm64-v8a.zip"
 URL="https://github.com/XTLS/Xray-core/releases/download/v${VER}/${ASSET}"

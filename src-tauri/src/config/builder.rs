@@ -5095,4 +5095,65 @@ mod tests {
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
+
+    /// Full configs against the real core: a realistic subscription (REALITY,
+    /// CDN ws/grpc/httpupgrade/xhttp, plain VLESS on port 80, vmess, trojan, ss,
+    /// hysteria2, tuic) under every routing shape the app emits — rule/global,
+    /// TUN on/off, kernel/smart auto-select, QUIC block, LAN bypass and TLS
+    /// fragment — must pass `sing-box check`. Guards core upgrades (1.13 → 1.14
+    /// removed the legacy DNS formats).
+    /// `cargo test --lib live_full_configs_validate -- --ignored`
+    #[test]
+    #[ignore = "needs the bundled dev sing-box binary"]
+    fn live_full_configs_validate() {
+        let bin = crate::core::find_bundled_core(None, crate::core::CoreKind::SingBox)
+            .expect("bundled sing-box binary — run the fetch-bundled-core script");
+        let links: &[&str] = &[
+            "vless://d342d11e-d424-4583-b36e-524ab1f0afa4@203.0.113.10:443?encryption=none&security=reality&sni=www.microsoft.com&fp=chrome&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&sid=6ba85179e30d4fc2&type=tcp&flow=xtls-rprx-vision#REALITY",
+            "vless://d342d11e-d424-4583-b36e-524ab1f0afa4@cdn.example.com:443?encryption=none&security=tls&sni=cdn.example.com&fp=chrome&type=ws&host=cdn.example.com&path=%2Fws%3Fed%3D2048#CDN-WS",
+            "vless://d342d11e-d424-4583-b36e-524ab1f0afa4@cdn.example.com:80?encryption=none&security=none&type=ws&host=cdn.example.com&path=%2F#PLAIN-80",
+            "vless://d342d11e-d424-4583-b36e-524ab1f0afa4@edge.example.dev:443?encryption=none&security=tls&sni=edge.example.dev&fp=chrome&type=xhttp&host=edge.example.dev&path=%2Fup&mode=auto#XHTTP",
+            "vless://d342d11e-d424-4583-b36e-524ab1f0afa4@hu.example.com:443?encryption=none&security=tls&sni=hu.example.com&type=httpupgrade&host=hu.example.com&path=%2Fhu#HU",
+            "trojan://pw123@example.com:443?security=tls&sni=example.com&type=grpc&serviceName=svc#TR-GRPC",
+            "ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@example.com:8388#SS",
+            "hysteria2://pass@example.com:443?sni=example.com&obfs=salamander&obfs-password=x#HY2",
+            "tuic://d342d11e-d424-4583-b36e-524ab1f0afa4:pw@example.com:443?sni=example.com&congestion_control=bbr&alpn=h3#TUIC",
+            "vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MiLCJhZGQiOiJleGFtcGxlLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6ImQzNDJkMTFlLWQ0MjQtNDU4My1iMzZlLTUyNGFiMWYwYWZhNCIsImFpZCI6IjAiLCJuZXQiOiJ3cyIsInR5cGUiOiJub25lIiwiaG9zdCI6ImV4YW1wbGUuY29tIiwicGF0aCI6Ii93cyIsInRscyI6InRscyIsInNuaSI6ImV4YW1wbGUuY29tIn0=",
+        ];
+        let mut nodes = Vec::new();
+        for link in links {
+            match crate::subscription::parse_single_uri(link, None) {
+                Ok(parsed) => nodes.extend(parsed.nodes),
+                Err(e) => panic!("parse failed for {link}: {e:?}"),
+            }
+        }
+        assert!(nodes.len() >= links.len(), "every link parses to a node");
+        let variants: Vec<(&str, BuildOptions)> = vec![
+            ("rule", base_build_options()),
+            ("global", BuildOptions { outbound_mode: OutboundMode::Global, ..base_build_options() }),
+            ("tun", BuildOptions { tun_enabled: true, block_quic: true, bypass_lan: true, ..base_build_options() }),
+            ("tun-v6-gvisor", BuildOptions { tun_enabled: true, tun_ipv6: true, tun_stack: "gvisor".into(), ..base_build_options() }),
+            ("kernel-urltest", BuildOptions { auto_select: crate::domain::AutoSelectMode::Kernel, probe_url: "https://www.gstatic.com/generate_204".into(), ..base_build_options() }),
+            ("smart", BuildOptions { auto_select: crate::domain::AutoSelectMode::Smart, ..base_build_options() }),
+            ("fragment-lan", BuildOptions { tls_fragment_singbox: true, allow_lan: true, ..base_build_options() }),
+        ];
+        let dir = std::env::temp_dir().join(format!("satelite-full-live-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut failures = Vec::new();
+        for (name, opts) in &variants {
+            let built = build_singbox_config(&nodes, opts).unwrap_or_else(|e| panic!("{name}: build failed: {e:?}"));
+            let path = dir.join(format!("{name}.json"));
+            std::fs::write(&path, built.value.to_string()).unwrap();
+            let output = std::process::Command::new(&bin).args(["check", "-c"]).arg(&path).output().expect("spawn sing-box");
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if !output.status.success() {
+                failures.push(format!("{name}: {stderr}"));
+            } else if stderr.contains("deprecated") {
+                // Still accepted, but due to break in a later core: surface it.
+                eprintln!("{name}: deprecation warning:\n{stderr}");
+            }
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(failures.is_empty(), "sing-box check rejected:\n{}", failures.join("\n"));
+    }
 }

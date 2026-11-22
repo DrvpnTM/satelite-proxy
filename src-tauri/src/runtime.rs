@@ -2912,7 +2912,7 @@ mod sidecar_plan_tests {
             id: id.into(),
             name: format!("n-{id}"),
             protocol,
-            server: "example.com".into(),
+            server: "localhost".into(), // plain VLESS to a public host is refused by Xray v26.10.21+
             port: 443,
             tls: None,
             transport: None,

@@ -6,7 +6,7 @@
 #   scripts/build-dmg.sh                      # auto-detect host arch, all three cores (default)
 #   scripts/build-dmg.sh --arch arm64         # Apple Silicon
 #   scripts/build-dmg.sh --arch intel         # Intel (x86_64)
-#   scripts/build-dmg.sh --arch intel 1.13.18 # pin bundled sing-box version
+#   scripts/build-dmg.sh --arch intel 1.14.4 # pin bundled sing-box version
 #   scripts/build-dmg.sh --singbox-only       # slim build: sing-box only, drop Xray + mihomo
 set -euo pipefail
 

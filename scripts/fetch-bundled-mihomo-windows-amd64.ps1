@@ -7,10 +7,10 @@
 # src-tauri/resources/bin/windows-amd64/mihomo-geodata/.
 # wintun.dll (Windows tun) is shared with the Xray staging — this script
 # only fetches it when missing.
-# Usage: pwsh scripts/fetch-bundled-mihomo-windows-amd64.ps1 [-Version 1.19.30] [-Proxy http://127.0.0.1:7890]
+# Usage: pwsh scripts/fetch-bundled-mihomo-windows-amd64.ps1 [-Version 1.19.34] [-Proxy http://127.0.0.1:7890]
 [CmdletBinding()]
 param(
-  [string]$Version = "1.19.30",
+  [string]$Version = "1.19.34",
   [string]$Proxy   = $env:HTTPS_PROXY  # e.g. http://127.0.0.1:7890
 )
 
