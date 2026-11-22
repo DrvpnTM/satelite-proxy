@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VER="${1:-2.1.0}"
+VER="${1:-2.4.0}"
 OUT_DIR="$ROOT/src-tauri/resources/bin/linux-amd64"
 ASSET="aether-linux-x86_64.tar.gz"
 URL="https://github.com/CluvexStudio/Aether/releases/download/v${VER}/${ASSET}"
@@ -26,7 +26,7 @@ curl -fL --retry 3 -o "$TMP/$ASSET" "$URL"
 
 # Integrity: verify against the upstream-published sha256.
 curl -fL --retry 3 -o "$TMP/$ASSET.sha256" "$URL.sha256"
-(cd "$TMP" && cp "$ASSET" "$(awk '{print $2}' "$ASSET.sha256")" && sha256sum -c "$ASSET.sha256") 
+(cd "$TMP" && want="$(awk '{print $1}' "$ASSET.sha256")" && echo "$want  $ASSET" | sha256sum -c -) 
 
 tar -xzf "$TMP/$ASSET" -C "$TMP"
 BIN="$(find "$TMP" -maxdepth 2 -type f -name aether | head -1)"

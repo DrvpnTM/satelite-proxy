@@ -3,7 +3,7 @@
 # Usage: pwsh scripts/fetch-bundled-aether-windows-amd64.ps1 [-Version 2.1.0]
 [CmdletBinding()]
 param(
-  [string]$Version = "2.1.0",
+  [string]$Version = "2.4.0",
   [string]$Proxy   = $env:HTTPS_PROXY  # e.g. http://127.0.0.1:7890
 )
 
