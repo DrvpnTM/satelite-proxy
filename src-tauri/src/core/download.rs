@@ -435,6 +435,11 @@ pub async fn download_latest_core_with_progress(
     proxy_url: Option<String>,
     progress: impl Fn(CoreDownloadProgress) + Send + Sync + 'static,
 ) -> AppResult<CoreDownloadResult> {
+    // Every core download (manual, restore) comes through here: a Store
+    // install never downloads code (see `crate::store`).
+    if crate::store::is_store_package() {
+        return Err(AppError::Core(crate::store::STORE_NO_DOWNLOAD.into()));
+    }
     let info = if let Some(t) = tag {
         fetch_release_by_tag_with_proxy(kind, &t, proxy_url.as_deref()).await?
     } else {

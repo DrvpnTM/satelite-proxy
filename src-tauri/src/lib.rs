@@ -1,3 +1,4 @@
+mod store;
 mod api;
 mod app_log;
 mod autostart;
@@ -452,6 +453,7 @@ pub fn run() {
             commands::get_lan_ip,
             commands::check_core_update,
             commands::check_app_update,
+            commands::is_store_build,
             commands::get_app_install_path,
             commands::download_core,
             commands::fetch_core_latest,

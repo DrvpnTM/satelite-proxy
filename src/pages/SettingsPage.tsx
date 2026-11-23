@@ -4,6 +4,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   checkAppUpdate,
+  isStoreBuild,
   checkCoreUpdate,
   diagnoseNetwork,
   downloadCore,
@@ -183,6 +184,11 @@ export function SettingsPage() {
   // latest GitHub tag needs a network check that routes via the proxy
   // when the kernel is running (same strategy as the core check).
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  // Microsoft Store install: no core downloads or GitHub update checks.
+  const [storeBuild, setStoreBuild] = useState(false);
+  useEffect(() => {
+    isStoreBuild().then(setStoreBuild).catch(() => {});
+  }, []);
   const [appUpdate, setAppUpdate] = useState<{
     current_version: string;
     latest_version: string;
@@ -334,6 +340,7 @@ export function SettingsPage() {
    * on tab open reuse a fresh cached result. */
   const runAppUpdateCheck = useCallback(
     async (reportError: boolean, force = false) => {
+      if (await isStoreBuild().catch(() => false)) return;
       setAppChecking(true);
       if (reportError) setAppError(null);
       try {
@@ -823,6 +830,7 @@ export function SettingsPage() {
               />
             </span>
           )}
+          {!storeBuild && (<>
           <GlassButton
             icon="↻"
             disabled={anyBusy || checking || !info}
@@ -847,6 +855,7 @@ export function SettingsPage() {
           >
             {busy ? t("settings.coreDownloading") : t("settings.coreDownload")}
           </GlassButton>
+          </>)}
           {/* Factory reset: always available on an installed core — the
              staged-vs-downloaded `source` flips whenever the kernel restarts
              (resolve re-stages the bundled binary into bin/), so keying
@@ -1875,6 +1884,11 @@ export function SettingsPage() {
                   ) : null}
                 </span>
               </div>
+              {storeBuild ? (
+                <div className="app-bar-actions">
+                  <span className="pill ok">{t("settings.storeManaged")}</span>
+                </div>
+              ) : (
               <div className="app-bar-actions">
                 <GlassButton
                   icon="↻"
@@ -1894,6 +1908,7 @@ export function SettingsPage() {
                   {t("settings.coreRedownload")}
                 </GlassButton>
               </div>
+              )}
             </div>
 
             {appError && (

@@ -616,6 +616,11 @@ export function checkAppUpdate(force = false) {
   }>("check_app_update", { force });
 }
 
+/** True for a Microsoft Store install: cores and app updates come from the Store. */
+export function isStoreBuild() {
+  return invoke<boolean>("is_store_build");
+}
+
 /** Absolute path of the app's own executable (install location). */
 export function getAppInstallPath() {
   return invoke<string>("get_app_install_path");

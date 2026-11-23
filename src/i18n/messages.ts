@@ -317,6 +317,7 @@ const en = {
     "Include pre-release tags in the update check (uses GitHub's rate-limited API instead of the default redirect check).",
   "settings.coreDownload": "Install",
   "settings.coreRedownload": "Re-download",
+  "settings.storeManaged": "Microsoft Store edition: the app and its cores are updated through the Store.",
   "settings.coreRestore": "Restore",
   "settings.coreRestoreHint":
     "Discard the downloaded core and fall back to the bundled one ({v}). A running core restarts automatically.",
@@ -1458,6 +1459,7 @@ const zh: Record<MessageKey, string> = {
     "检测时包含预发布版本（会走 GitHub 有请求次数限制的 API，而非默认的重定向检测）。",
   "settings.coreDownload": "下载",
   "settings.coreRedownload": "重新下载",
+  "settings.storeManaged": "Microsoft Store 版：应用与内核通过应用商店更新。",
   "settings.coreRestore": "重置",
   "settings.coreRestoreHint":
     "放弃已下载的内核，恢复为随应用内置的版本（{v}）。内核运行中将自动重启。",

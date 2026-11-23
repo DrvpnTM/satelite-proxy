@@ -174,6 +174,10 @@ pub async fn check_app_update(
     force: Option<bool>,
 ) -> Result<AppUpdateInfo, String> {
     let current = app.package_info().version.to_string();
+    // Store installs are updated by the Store: never look on GitHub.
+    if crate::store::is_store_package() {
+        return Ok(app_update_info(&current, &current, None, true));
+    }
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -246,6 +250,13 @@ fn app_update_info(
         cached,
         checked_at,
     }
+}
+
+/// True for a Microsoft Store install: the UI hides core downloads and the
+/// app update check (see `crate::store`).
+#[tauri::command]
+pub fn is_store_build() -> bool {
+    crate::store::is_store_package()
 }
 
 #[tauri::command]
