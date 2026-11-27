@@ -187,7 +187,11 @@ pub fn run() {
             let launch = app_state
                 .with_store(|s| Ok(s.settings.launch_at_login))
                 .unwrap_or(false);
-            let _ = autostart::set_launch_at_login(launch);
+            // The Store build's startup task is owned by Windows Settings;
+            // syncing it here would open Settings on every launch.
+            if !portable::is_msix() {
+                let _ = autostart::set_launch_at_login(launch);
+            }
 
             app.manage(app_state);
             app_log::info("app", "DrVPN started");
@@ -312,8 +316,9 @@ pub fn run() {
                     queue_import(&handle, urls);
                 });
                 // Dev / Linux / Windows: register schemes for the current executable.
+                // The Store build declares them in its MSIX manifest instead.
                 #[cfg(any(windows, target_os = "linux"))]
-                {
+                if !portable::is_msix() {
                     if let Err(e) = app.deep_link().register_all() {
                         app_log::error("deep-link", format!("register_all failed: {e}"));
                     }

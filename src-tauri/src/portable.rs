@@ -51,8 +51,60 @@ pub fn is_portable() -> bool {
 /// Portable data root: the exe directory itself (no extra nesting — keeps the
 /// `<app_data>/data/…` sub-layout, `config/`, `bin/`, `logs/`, `mihomo/` and
 /// the config-relative mihomo home derivation in `core/kind.rs` intact).
+/// In the Microsoft Store (MSIX) build the root is the package's own
+/// LocalState folder instead (see [`msix_data_dir`]).
 pub fn app_data_dir() -> Option<PathBuf> {
-    root().map(Path::to_path_buf)
+    root().map(Path::to_path_buf).or_else(msix_data_dir)
+}
+
+/// Package family name when running as a packaged (MSIX / Microsoft Store)
+/// app, `None` otherwise.
+#[cfg(windows)]
+pub fn msix_family_name() -> Option<&'static str> {
+    static NAME: OnceLock<Option<String>> = OnceLock::new();
+    NAME.get_or_init(|| {
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetCurrentPackageFamilyName(len: *mut u32, name: *mut u16) -> i32;
+        }
+        let mut len: u32 = 0;
+        // Unpackaged processes get APPMODEL_ERROR_NO_PACKAGE and len stays 0.
+        unsafe { GetCurrentPackageFamilyName(&mut len, std::ptr::null_mut()) };
+        if len == 0 {
+            return None;
+        }
+        let mut buf = vec![0u16; len as usize];
+        if unsafe { GetCurrentPackageFamilyName(&mut len, buf.as_mut_ptr()) } != 0 {
+            return None;
+        }
+        let end = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
+        Some(String::from_utf16_lossy(&buf[..end]))
+    })
+    .as_deref()
+}
+
+#[cfg(not(windows))]
+pub fn msix_family_name() -> Option<&'static str> {
+    None
+}
+
+pub fn is_msix() -> bool {
+    msix_family_name().is_some()
+}
+
+/// Store build data root: `%LOCALAPPDATA%\Packages\<family>\LocalState`.
+/// It is the package's own folder, so writes are not virtualized, the
+/// elevated TUN core reads the same files at the same path, and Windows
+/// deletes it when the app is uninstalled.
+fn msix_data_dir() -> Option<PathBuf> {
+    let family = msix_family_name()?;
+    let local = std::env::var_os("LOCALAPPDATA")?;
+    Some(
+        PathBuf::from(local)
+            .join("Packages")
+            .join(family)
+            .join("LocalState"),
+    )
 }
 
 /// App data dir with portable override; drop-in replacement for

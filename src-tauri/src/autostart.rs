@@ -109,6 +109,17 @@ pub fn set_launch_at_login(enabled: bool) -> AppResult<()> {
     }
     #[cfg(target_os = "windows")]
     {
+        // Microsoft Store (MSIX) build: launch at login is the package's
+        // `windows.startupTask` (TaskId "DrVPNStartup"), which the user turns
+        // on or off in Settings > Apps > Startup and Windows removes on
+        // uninstall. Open that page instead of touching the registry.
+        if crate::portable::is_msix() {
+            let _ = Command::new("explorer.exe")
+                .arg("ms-settings:startupapps")
+                .spawn();
+            let _ = enabled;
+            return Ok(());
+        }
         // Registry Run key via reg.exe
         let exe = current_exe()?;
         if enabled {

@@ -1,0 +1,58 @@
+name: Store build (portable zip artifact)
+
+# Builds the Windows portable zip for a branch and keeps it as a workflow
+# artifact only (no GitHub release). DrvpnTM/app's windows-store workflow
+# repackages it as the Microsoft Store MSIX.
+
+on:
+  push:
+    branches: [store-msix]
+  workflow_dispatch:
+
+jobs:
+  windows-portable:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bundled cores cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            src-tauri/resources/bin/windows-amd64
+            src-tauri/resources/rule-sets
+          key: bundled-cores-windows-amd64-${{ hashFiles('scripts/fetch-bundled-core-windows-amd64.ps1', 'scripts/fetch-bundled-xray-windows-amd64.ps1', 'scripts/fetch-bundled-mihomo-windows-amd64.ps1', 'scripts/fetch-bundled-rule-sets.sh') }}
+
+      - name: Prefetch bundled cores & rule sets
+        shell: bash
+        run: >
+          bash scripts/ci-fetch-with-retry.sh
+          scripts/fetch-bundled-core-windows-amd64.ps1
+          scripts/fetch-bundled-xray-windows-amd64.ps1
+          scripts/fetch-bundled-mihomo-windows-amd64.ps1
+          scripts/fetch-bundled-rule-sets.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build portable zip
+        shell: pwsh
+        run: scripts/build-windows.ps1 -Bundle portable
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portable-zip
+          path: src-tauri/target/release/bundle/portable/*.zip

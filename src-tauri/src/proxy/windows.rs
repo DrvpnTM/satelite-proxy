@@ -1,8 +1,11 @@
-//! Windows system HTTP(S)/SOCKS proxy via the registry + WinINet refresh.
+//! Windows system HTTP(S)/SOCKS proxy via the WinINet per-connection API.
 //!
-//! Writes `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`
-//! (ProxyEnable, ProxyServer, ProxyOverride) and signals WinINet so apps pick
-//! up the change immediately. On disable we restore whatever ProxyServer /
+//! Sets the LAN connection's proxy (flags, server, bypass list) through the
+//! WinINet per-connection API and signals WinINet so apps pick up the change
+//! immediately. WinINet stores it in `HKCU\...\Internet Settings` itself; we
+//! only read that key. Going through the API instead of writing the registry
+//! also works from the Microsoft Store (MSIX) build, whose own registry writes
+//! are virtualized. On disable we restore whatever ProxyServer /
 //! ProxyOverride values we overwrote, so the user's prior config survives.
 //!
 //! We hand-roll the handful of Win32 FFI symbols (no windows-sys dependency),
@@ -27,7 +30,6 @@ type LPCWSTR = *const u16;
 
 const HKEY_CURRENT_USER: HKEY = 0x8000_0001usize as HKEY;
 const KEY_QUERY_VALUE: DWORD = 0x0001;
-const KEY_SET_VALUE: DWORD = 0x0002;
 const REG_SZ: DWORD = 1;
 const REG_DWORD: DWORD = 4;
 const ERROR_SUCCESS: LONG = 0;
@@ -35,6 +37,31 @@ const ERROR_FILE_NOT_FOUND: LONG = 2;
 
 const INTERNET_OPTION_SETTINGS_CHANGED: DWORD = 39;
 const INTERNET_OPTION_REFRESH: DWORD = 37;
+const INTERNET_OPTION_PER_CONNECTION_OPTION: DWORD = 75;
+const INTERNET_PER_CONN_FLAGS: DWORD = 1;
+const INTERNET_PER_CONN_PROXY_SERVER: DWORD = 2;
+const INTERNET_PER_CONN_PROXY_BYPASS: DWORD = 3;
+const PROXY_TYPE_DIRECT: DWORD = 0x1;
+const PROXY_TYPE_PROXY: DWORD = 0x2;
+
+/// INTERNET_PER_CONN_OPTIONW: the value is a DWORD / LPWSTR / FILETIME union,
+/// pointer-sized on x64.
+#[repr(C)]
+struct PerConnOption {
+    option: DWORD,
+    value: usize,
+}
+
+/// INTERNET_PER_CONN_OPTION_LISTW. A null connection name means the LAN
+/// connection, which is what Windows' Settings proxy page edits.
+#[repr(C)]
+struct PerConnOptionList {
+    size: DWORD,
+    connection: *mut u16,
+    count: DWORD,
+    error: DWORD,
+    options: *mut PerConnOption,
+}
 
 #[link(name = "advapi32")]
 extern "system" {
@@ -44,14 +71,6 @@ extern "system" {
         ulOptions: DWORD,
         samDesired: DWORD,
         phkResult: PHKEY,
-    ) -> LONG;
-    fn RegSetValueExW(
-        hKey: HKEY,
-        lpValueName: LPCWSTR,
-        Reserved: DWORD,
-        dwType: DWORD,
-        lpData: *const u8,
-        cbData: DWORD,
     ) -> LONG;
     fn RegQueryValueExW(
         hKey: HKEY,
@@ -72,6 +91,12 @@ extern "system" {
         lpBuffer: *mut CVoid,
         dwBufferLength: DWORD,
     ) -> BOOL;
+    fn InternetQueryOptionW(
+        hInternet: *mut CVoid,
+        dwOption: DWORD,
+        lpBuffer: *mut CVoid,
+        lpdwBufferLength: *mut DWORD,
+    ) -> BOOL;
 }
 
 /// Encode a Rust string as UTF-16 **with** a trailing NUL, as Win32 expects.
@@ -82,7 +107,7 @@ fn wide(s: &str) -> Vec<u16> {
         .collect()
 }
 
-/// Open HKCU\...\Internet Settings for writing.
+/// Open HKCU\...\Internet Settings for reading.
 fn open_internet_settings() -> AppResult<HKEY> {
     let sub = wide("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings");
     let mut h: HKEY = core::ptr::null_mut();
@@ -91,7 +116,7 @@ fn open_internet_settings() -> AppResult<HKEY> {
             HKEY_CURRENT_USER,
             sub.as_ptr(),
             0,
-            KEY_QUERY_VALUE | KEY_SET_VALUE,
+            KEY_QUERY_VALUE,
             &mut h as *mut HKEY,
         )
     };
@@ -195,34 +220,73 @@ fn proxy_server_is_exact_endpoint(value: &str, host: &str, port: u16) -> bool {
     !endpoints.is_empty() && endpoints.iter().all(|endpoint| endpoint == &expected)
 }
 
-fn set_dword(h: HKEY, name: &str, value: DWORD) -> AppResult<()> {
-    let n = wide(name);
-    let rc = unsafe {
-        RegSetValueExW(
-            h,
-            n.as_ptr(),
-            0,
-            REG_DWORD,
-            (&value as *const DWORD).cast::<u8>(),
-            core::mem::size_of::<DWORD>() as DWORD,
+/// Current LAN connection flags (PROXY_TYPE_*), so enabling or disabling the
+/// proxy keeps the user's auto-detect / setup-script choices.
+fn query_conn_flags() -> DWORD {
+    let mut opt = [PerConnOption {
+        option: INTERNET_PER_CONN_FLAGS,
+        value: 0,
+    }];
+    let mut list = PerConnOptionList {
+        size: core::mem::size_of::<PerConnOptionList>() as DWORD,
+        connection: core::ptr::null_mut(),
+        count: 1,
+        error: 0,
+        options: opt.as_mut_ptr(),
+    };
+    let mut len = list.size;
+    let ok = unsafe {
+        InternetQueryOptionW(
+            core::ptr::null_mut(),
+            INTERNET_OPTION_PER_CONNECTION_OPTION,
+            (&mut list as *mut PerConnOptionList).cast::<CVoid>(),
+            &mut len,
         )
     };
-    if rc != ERROR_SUCCESS {
-        return Err(AppError::Core(format!(
-            "RegSetValueExW {name} failed (rc={rc})"
-        )));
+    if ok != 0 {
+        opt[0].value as DWORD
+    } else {
+        PROXY_TYPE_DIRECT
     }
-    Ok(())
 }
 
-fn set_sz(h: HKEY, name: &str, value: &str) -> AppResult<()> {
-    let n = wide(name);
-    let bytes = wide(value);
-    let cb = (bytes.len() * 2) as DWORD; // includes trailing NUL, in bytes
-    let rc = unsafe { RegSetValueExW(h, n.as_ptr(), 0, REG_SZ, bytes.as_ptr().cast::<u8>(), cb) };
-    if rc != ERROR_SUCCESS {
+/// Set the LAN connection's flags and, when given, proxy server + bypass list.
+fn set_conn_options(flags: DWORD, server_and_bypass: Option<(&str, &str)>) -> AppResult<()> {
+    // Keep the UTF-16 buffers alive until the call returns.
+    let strings = server_and_bypass.map(|(server, bypass)| (wide(server), wide(bypass)));
+    let mut opts = vec![PerConnOption {
+        option: INTERNET_PER_CONN_FLAGS,
+        value: flags as usize,
+    }];
+    if let Some((server, bypass)) = &strings {
+        opts.push(PerConnOption {
+            option: INTERNET_PER_CONN_PROXY_SERVER,
+            value: server.as_ptr() as usize,
+        });
+        opts.push(PerConnOption {
+            option: INTERNET_PER_CONN_PROXY_BYPASS,
+            value: bypass.as_ptr() as usize,
+        });
+    }
+    let mut list = PerConnOptionList {
+        size: core::mem::size_of::<PerConnOptionList>() as DWORD,
+        connection: core::ptr::null_mut(),
+        count: opts.len() as DWORD,
+        error: 0,
+        options: opts.as_mut_ptr(),
+    };
+    let ok = unsafe {
+        InternetSetOptionW(
+            core::ptr::null_mut(),
+            INTERNET_OPTION_PER_CONNECTION_OPTION,
+            (&mut list as *mut PerConnOptionList).cast::<CVoid>(),
+            list.size,
+        )
+    };
+    if ok == 0 {
         return Err(AppError::Core(format!(
-            "RegSetValueExW {name} failed (rc={rc})"
+            "InternetSetOptionW per-connection failed ({})",
+            std::io::Error::last_os_error()
         )));
     }
     Ok(())
@@ -256,16 +320,11 @@ impl SystemProxy for WindowsSystemProxy {
         // For per-protocol we'd use "http=host:port;https=host:port;socks=host:port",
         // but the unified form is what sing-box's mixed port expects.
         let server = format!("{host}:{port}");
-        let h = open_internet_settings()?;
-        set_dword(h, "ProxyEnable", 1)?;
-        set_sz(h, "ProxyServer", &server)?;
         // Local addresses bypass the proxy. Keep it simple + sane.
-        set_sz(
-            h,
-            "ProxyOverride",
-            "localhost;127.*;10.*;172.16.*;192.168.*;<local>",
+        set_conn_options(
+            query_conn_flags() | PROXY_TYPE_PROXY | PROXY_TYPE_DIRECT,
+            Some((&server, "localhost;127.*;10.*;172.16.*;192.168.*;<local>")),
         )?;
-        unsafe { RegCloseKey(h) };
 
         notify_changed();
 
@@ -278,9 +337,7 @@ impl SystemProxy for WindowsSystemProxy {
         // We only flip ProxyEnable off and leave ProxyServer intact, so a later
         // re-enable (or another proxy app) still has a value to use. This
         // matches how Windows' own Settings UI toggles the proxy.
-        let h = open_internet_settings()?;
-        set_dword(h, "ProxyEnable", 0)?;
-        unsafe { RegCloseKey(h) };
+        set_conn_options((query_conn_flags() & !PROXY_TYPE_PROXY) | PROXY_TYPE_DIRECT, None)?;
 
         notify_changed();
         Ok(())
